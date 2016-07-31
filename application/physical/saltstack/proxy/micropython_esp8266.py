@@ -65,13 +65,18 @@ def init(opts=None):
     # DETAILS['user'] = opts['proxy'].get('user') #telnet
     # DETAILS['password'] = opts['proxy'].get('password') #telnet, websocket
     #try to connect
-    DETAILS['pyboard'] = mp.mpfexp.MpFileExplorer('ser:/dev/ttyUSB0') #devicefile
-    DETAILS['pyboard'].enter_raw_repl()
+    try:
+        DETAILS['pyboard'] = mp.mpfexp.MpFileExplorer('ser:/dev/ttyUSB0') #devicefile
+        DETAILS['connected'] = True
+        DETAILS['pyboard'].enter_raw_repl()
+    except:
+        DETAILS['connected'] = False
+    #todo wrap
     #if successful
     # do whatever
     #else return false
     #
-    #DETAILS['initialized'] = True
+    DETAILS['initialized'] = True
 
 #def init(opts=None):
 #    '''
@@ -103,7 +108,7 @@ def initialized():
 #
 #
 def ping():
-    return True
+    return DETAILS['connected']
 #def ping():
 #    '''
 #    Required.
