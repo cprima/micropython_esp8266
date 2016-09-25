@@ -34,7 +34,17 @@ def copy_file(src=None, dst=None):
 
 #
 def check_firmware():
-    return __proxy__['micropython_esp8266.check_firmware']()
+    ret = __proxy__['micropython_esp8266.check_firmware']()
+    ret2 = ret.split('\x1F')
+    import json
+    return json.loads(ret2[1])
+
+#
+def test():
+    ret = __proxy__['micropython_esp8266.test']()
+    ret2 = ret.split('\x1F')
+    import json
+    return json.loads(ret2[1])
 
 # candidates for grains
 #sys.implementation

@@ -160,24 +160,154 @@ def _grains():
     '''
     Helper function to the grains from the proxied device.
     '''
-    ret = {}
-    ret['machine.freq'] = '79999'
-    ret['machine.unique_id'] = '4711'
-    ret['esp.flash_id'] = '0815'
-    #todo write a ecex_-eable script to return a dictionary
-    #ret['machine.freq'] = DETAILS['pyboard'].machine.freq()
-    #ret['machine.unique_id'] = DETAILS['pyboard'].machine.unique_id()
-    #ret['esp.flash_id'] = DETAILS['pyboard'].esp.flash_id()
-    GRAINS_CACHE.update(ret)
+    execstring = (
+        "import esp, os, sys, machine, network, ubinascii, json\r\n"
+        "\r\n"
+        "ret = {{}}\r\n"
+        "\r\n"
+        "ret['fw'] = sys.implementation.name + '_' + sys.platform\r\n"
+        "ret['fw_family'] = sys.implementation.name\r\n"
+        "ret['fw_platform'] = sys.platform\r\n"
+        "ret['fwmajorrelease'] = sys.implementation.version[0]\r\n"
+        "ret['fwrelease'] = '.'.join(map(str, sys.implementation.version))\r\n"
+        "ret['fwrelease_info'] = sys.implementation.version\r\n"
+        "\r\n"
+        "if network.WLAN(network.STA_IF).active() or network.WLAN(network.AP_IF).active():\r\n"
+        "    ret['ip4_interfaces'] = {{}}\r\n"
+        "    ret['ipv4'] = {{}}\r\n"
+        "\r\n"
+        "if network.WLAN(network.STA_IF).active() and network.WLAN(network.STA_IF).ifconfig()[0] is not '0.0.0.0':\r\n"
+        "    ret['ip4_interfaces']['sta'] = network.WLAN(network.STA_IF).ifconfig()[0]\r\n"
+        "    ret['ipv4']['sta'] = network.WLAN(network.STA_IF).ifconfig()[0]\r\n"
+        "\r\n"
+        "if network.WLAN(network.AP_IF).active() and network.WLAN(network.AP_IF).ifconfig()[0] is not '0.0.0.0':\r\n"
+        "    ret['ip4_interfaces']['ap'] = network.WLAN(network.AP_IF).ifconfig()[0]\r\n"
+        "    ret['ipv4']['ap'] = network.WLAN(network.AP_IF).ifconfig()[0]\r\n"
+        "\r\n"
+        "ret['machine_id'] = ubinascii.hexlify(machine.unique_id()).decode('utf-8')\r\n"
+        "ret['mem_total'] = esp.flash_size()\r\n"
+        "ret['flash_id'] = esp.flash_id()\r\n"
+        "ret['freq'] = machine.freq()\r\n"
+        "\r\n"
+        "has_hostname = False\r\n"
+        "try:\r\n"
+        "    with open('/etc/hostname', 'r') as f:\r\n"
+        "        firstline = f.readline().strip()\r\n"
+        "        has_hostname = True\r\n"
+        "except:\r\n"
+        "    pass\r\n"
+        "\r\n"
+        "try:\r\n"
+        "    with open('/hostname', 'r') as f:\r\n"
+        "        firstline = f.readline().strip()\r\n"
+        "        has_hostname = True\r\n"
+        "except:\r\n"
+        "    pass\r\n"
+        "\r\n"
+        "if has_hostname:\r\n"
+        "    ret['host'] = firstline\r\n"
+        "    ret['nodename'] = firstline\r\n"
+        "    ret['id'] = firstline\r\n"
+        "    ret['fqdn'] = firstline\r\n"
+        "\r\n"
+        "ret['pythonversion'] = sys.version_info\r\n"
+        "ret['serialnumber'] = ubinascii.hexlify(machine.unique_id()).decode('utf-8')\r\n"
+        "ret['virtual'] = 'physical'\r\n"
+        "ret['cpu_model'] = 'Xtensa lx106'\r\n"
+        "\r\n"
+        "ret['hwaddr_interfaces'] = {{}}\r\n"
+        "addr = ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac')).decode('utf-8')\r\n"
+        "ret['hwaddr_interfaces']['sta'] = ':'.join(addr[i:i+2] for i in range(0,len(addr),2))\r\n"
+        "addr = None\r\n"
+        "\r\n"
+        "addr = ubinascii.hexlify(network.WLAN(network.AP_IF).config('mac')).decode('utf-8')\r\n"
+        "ret['hwaddr_interfaces']['ap'] = ':'.join(addr[i:i+2] for i in range(0,len(addr),2))\r\n"
+        "\r\n"
+        "print('{som}' + json.dumps(ret) + '{eom}')\r\n"
+    ).format(som='\x1F', eom='\x1F')
+    ret = DETAILS['pyboard'].exec_(execstring)
+    ret2 = ret.split('\x1F')
+    import json
+    mydict = json.loads(ret2[1])
+    GRAINS_CACHE.update(mydict)
     return GRAINS_CACHE
 #
 
 def check_firmware():
-    ret = DETAILS['pyboard'].exec_(
-        "import esp, ubinascii\r\n"
-        "ret = {}\r\n"
+    execstring = ("import esp, ubinascii, ujson\r\n"
+        "ret = {{}}\r\n"
         "ret['check_fw'] = esp.check_fw()\r\n"
-        "print(ret)"
-    )
+        "print('{som}' + ujson.dumps(ret) + '{eom}')").format(x=x, som='\x1F', eom='\x1F')
+    ret = DETAILS['pyboard'].exec_(execstring)
     return ret
 #
+
+def test():
+    execstring = (
+        "import esp, os, sys, machine, network, ubinascii, json\r\n"
+        "\r\n"
+        "ret = {{}}\r\n"
+        "\r\n"
+        "ret['fw'] = sys.implementation.name + '_' + sys.platform\r\n"
+        "ret['fw_family'] = sys.implementation.name\r\n"
+        "ret['fw_platform'] = sys.platform\r\n"
+        "ret['fwmajorrelease'] = sys.implementation.version[0]\r\n"
+        "ret['fwrelease'] = '.'.join(map(str, sys.implementation.version))\r\n"
+        "ret['fwrelease_info'] = sys.implementation.version\r\n"
+        "\r\n"
+        "if network.WLAN(network.STA_IF).active() or network.WLAN(network.AP_IF).active():\r\n"
+        "    ret['ip4_interfaces'] = {{}}\r\n"
+        "    ret['ipv4'] = {{}}\r\n"
+        "\r\n"
+        "if network.WLAN(network.STA_IF).active() and network.WLAN(network.STA_IF).ifconfig()[0] is not '0.0.0.0':\r\n"
+        "    ret['ip4_interfaces']['sta'] = network.WLAN(network.STA_IF).ifconfig()[0]\r\n"
+        "    ret['ipv4']['sta'] = network.WLAN(network.STA_IF).ifconfig()[0]\r\n"
+        "\r\n"
+        "if network.WLAN(network.AP_IF).active() and network.WLAN(network.AP_IF).ifconfig()[0] is not '0.0.0.0':\r\n"
+        "    ret['ip4_interfaces']['ap'] = network.WLAN(network.AP_IF).ifconfig()[0]\r\n"
+        "    ret['ipv4']['ap'] = network.WLAN(network.AP_IF).ifconfig()[0]\r\n"
+        "\r\n"
+        "ret['machine_id'] = ubinascii.hexlify(machine.unique_id()).decode('utf-8')\r\n"
+        "ret['mem_total'] = esp.flash_size()\r\n"
+        "ret['flash_id'] = esp.flash_id()\r\n"
+        "ret['freq'] = machine.freq()\r\n"
+        "\r\n"
+        "has_hostname = False\r\n"
+        "try:\r\n"
+        "    with open('/etc/hostname', 'r') as f:\r\n"
+        "        firstline = f.readline().strip()\r\n"
+        "        has_hostname = True\r\n"
+        "except:\r\n"
+        "    pass\r\n"
+        "\r\n"
+        "try:\r\n"
+        "    with open('/hostname', 'r') as f:\r\n"
+        "        firstline = f.readline().strip()\r\n"
+        "        has_hostname = True\r\n"
+        "except:\r\n"
+        "    pass\r\n"
+        "\r\n"
+        "if has_hostname:\r\n"
+        "    ret['host'] = firstline\r\n"
+        "    ret['nodename'] = firstline\r\n"
+        "    ret['id'] = firstline\r\n"
+        "    ret['fqdn'] = firstline\r\n"
+        "\r\n"
+        "ret['pythonversion'] = sys.version_info\r\n"
+        "ret['serialnumber'] = ubinascii.hexlify(machine.unique_id()).decode('utf-8')\r\n"
+        "ret['virtual'] = 'physical'\r\n"
+        "ret['cpu_model'] = 'Xtensa lx106'\r\n"
+        "\r\n"
+        "ret['hwaddr_interfaces'] = {{}}\r\n"
+        "addr = ubinascii.hexlify(network.WLAN(network.STA_IF).config('mac')).decode('utf-8')\r\n"
+        "ret['hwaddr_interfaces']['sta'] = ':'.join(addr[i:i+2] for i in range(0,len(addr),2))\r\n"
+        "addr = None\r\n"
+        "\r\n"
+        "addr = ubinascii.hexlify(network.WLAN(network.AP_IF).config('mac')).decode('utf-8')\r\n"
+        "ret['hwaddr_interfaces']['ap'] = ':'.join(addr[i:i+2] for i in range(0,len(addr),2))\r\n"
+        "\r\n"
+        "print('{som}' + json.dumps(ret) + '{eom}')\r\n"
+    ).format(som='\x1F', eom='\x1F')
+    ret = DETAILS['pyboard'].exec_(execstring)
+    return ret
+
